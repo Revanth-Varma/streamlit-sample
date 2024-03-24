@@ -5,14 +5,22 @@ import re
 import nltk
 from nltk.stem import PorterStemmer, WordNetLemmatizer
 from nltk.tokenize import word_tokenize
+import os
+import tempfile
 
 nltk.download('punkt')
 nltk.download('wordnet')
 
+
 # Function to convert audio file to WAV format
-def convert_to_wav(input_file, output_file):
-    audio = AudioSegment.from_file(input_file)
-    audio.export(output_file, format="wav")
+def convert_to_wav(audio_file, output_file_path):
+    with tempfile.NamedTemporaryFile(delete=False) as temp_audio:
+        temp_audio.write(audio_file.read())
+        temp_audio_path = temp_audio.name
+    audio = AudioSegment.from_file(temp_audio_path)
+    audio.export(output_file_path, format="wav")
+    os.unlink(temp_audio_path)  # Delete the temporary audio file
+
 
 # Function to convert speech to text
 def speech_to_text(audio_file):
