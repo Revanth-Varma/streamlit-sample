@@ -1,6 +1,7 @@
 import streamlit as st
 from pydub import AudioSegment
 import speech_recognition as sr
+from io import BytesIO
 
 # Function to convert audio file to PCM WAV format
 def convert_to_wav(input_file, output_file):
@@ -32,11 +33,11 @@ def main():
     uploaded_file = st.file_uploader("Upload an audio file", type=["wav", "mp3", "ogg"])
 
     if uploaded_file is not None:
-        # Display the uploaded file
-        st.audio(uploaded_file, format='audio/ogg')
+        # Convert uploaded file to bytes
+        audio_bytes = BytesIO(uploaded_file.read())
 
         # Convert audio to text
-        text = speech_to_text(uploaded_file)
+        text = speech_to_text(audio_bytes)
 
         # Display the converted text
         st.header("Converted Text:")
