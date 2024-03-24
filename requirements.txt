@@ -1,4 +1,4 @@
-pydub
-SpeechRecognition
-ffmpeg
-streamlit
+streamlit==1.7.0
+pydub==0.25.1
+speechrecognition==3.8.1
+nltk==3.6.3
