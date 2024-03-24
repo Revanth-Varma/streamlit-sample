@@ -1,47 +1,71 @@
 import streamlit as st
 from pydub import AudioSegment
 import speech_recognition as sr
-from io import BytesIO
+import re
+import nltk
+from nltk.stem import PorterStemmer, WordNetLemmatizer
+from nltk.tokenize import word_tokenize
 
-# Function to convert audio file to PCM WAV format
+nltk.download('punkt')
+nltk.download('wordnet')
+
+# Function to convert audio file to WAV format
 def convert_to_wav(input_file, output_file):
     audio = AudioSegment.from_file(input_file)
     audio.export(output_file, format="wav")
 
-# Function to convert audio file to text
+# Function to convert speech to text
 def speech_to_text(audio_file):
-    # Convert audio file to PCM WAV format
-    wav_file = "converted_audio.wav"
-    convert_to_wav(audio_file, wav_file)
-
     recognizer = sr.Recognizer()
-    with sr.AudioFile(wav_file) as source:
+    with sr.AudioFile(audio_file) as source:
         audio = recognizer.record(source)
         try:
             text = recognizer.recognize_google(audio)
             return text
         except sr.UnknownValueError:
-            return "Sorry, could not understand audio"
+            st.error("Sorry, could not understand audio")
+            return ""
         except sr.RequestError as e:
-            return f"Error fetching results; {e}"
+            st.error("Error fetching results; {0}".format(e))
+            return ""
 
-# Main streamlit app
+# Function to preprocess text
+def preprocess_text(text):
+    text = re.sub(r'[^a-zA-Z\s]', '', text)
+    tokens = word_tokenize(text)
+
+    porter_stemmer = PorterStemmer()
+    lemmatizer = WordNetLemmatizer()
+
+    stemmed_tokens = [porter_stemmer.stem(token) for token in tokens]
+    lemmatized_tokens = [lemmatizer.lemmatize(token) for token in tokens]
+
+    lemmatized_text = ' '.join(lemmatized_tokens)
+
+    return lemmatized_text
+
+# Streamlit app
 def main():
-    st.title("Speech to Text Converter")
+    st.title("Speech-to-Video Synthesis")
 
-    # File upload section
-    uploaded_file = st.file_uploader("Upload an audio file", type=["wav", "mp3", "ogg"])
+    option = st.radio("Choose an option:", ("Upload audio file", "Record audio"))
 
-    if uploaded_file is not None:
-        # Convert uploaded file to bytes
-        audio_bytes = BytesIO(uploaded_file.read())
+    if option == "Upload audio file":
+        audio_file = st.file_uploader("Upload audio file", type=["mp3", "wav", "ogg"])
+        if audio_file is not None:
+            output_file_path = "converted_audio.wav"
+            convert_to_wav(audio_file, output_file_path)
+            text = speech_to_text(output_file_path)
+            preprocessed_text = preprocess_text(text)
+            test_text = {
+                'text': preprocessed_text,
+            }
+            # Generate video and display it
+            output_video_path = p(test_text)[OutputKeys.OUTPUT_VIDEO]
+            st.video(output_video_path)
 
-        # Convert audio to text
-        text = speech_to_text(audio_bytes)
-
-        # Display the converted text
-        st.header("Converted Text:")
-        st.write(text)
+    elif option == "Record audio":
+        st.write("Recording audio...")  # Placeholder for recording functionality
 
 if __name__ == "__main__":
     main()
